@@ -4,8 +4,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/sdl_image"
+	"github.com/kasworld/go-sdl2/sdl"
+	"github.com/kasworld/go-sdl2/sdl_image"
 	"os"
 )
 
