@@ -125,41 +125,6 @@ func (f *Font) RenderUTF8_Blended(text string, color sdl.Color) (*sdl.Surface,er
 	return surface, nil
 }
 
-<<<<<<< HEAD
-func (f *Font) RenderUTF8_Solid(text string, color sdl.Color) *sdl.Surface {
-	_text := C.CString(text)
-	defer C.free(unsafe.Pointer(_text))
-	_c := C.SDL_Color{C.Uint8(color.R), C.Uint8(color.G), C.Uint8(color.B), C.Uint8(color.A)}
-	surface := (*sdl.Surface)(unsafe.Pointer(C.TTF_RenderUTF8_Solid(f.f, _text, _c)))
-	return surface
-}
-func (f *Font) RenderUTF8_Shaded(text string, fg, bg sdl.Color) *sdl.Surface {
-	_text := C.CString(text)
-	defer C.free(unsafe.Pointer(_text))
-	_fg := C.SDL_Color{C.Uint8(fg.R), C.Uint8(fg.G), C.Uint8(fg.B), C.Uint8(fg.A)}
-	_bg := C.SDL_Color{C.Uint8(bg.R), C.Uint8(bg.G), C.Uint8(bg.B), C.Uint8(bg.A)}
-	surface := (*sdl.Surface)(unsafe.Pointer(C.TTF_RenderUTF8_Shaded(f.f, _text, _fg, _bg)))
-	return surface
-}
-func (f *Font) RenderUTF8_Blended(text string, color sdl.Color) *sdl.Surface {
-	_text := C.CString(text)
-	defer C.free(unsafe.Pointer(_text))
-	_c := C.SDL_Color{C.Uint8(color.R), C.Uint8(color.G), C.Uint8(color.B), C.Uint8(color.A)}
-	surface := (*sdl.Surface)(unsafe.Pointer(C.TTF_RenderUTF8_Blended(f.f, _text, _c)))
-	return surface
-}
-
-=======
-func (f *Font) RenderUTF8_Blended_Wrapped(text string, fg sdl.Color,wrapLength int) (*sdl.Surface,error) {
-	_text := C.CString(text)
-	defer C.free(unsafe.Pointer(_text))
-	_c := C.SDL_Color{C.Uint8(fg.R), C.Uint8(fg.G), C.Uint8(fg.B), C.Uint8(fg.A)}
-	surface := (*sdl.Surface)(unsafe.Pointer(C.TTF_RenderUTF8_Blended_Wrapped(f.f, _text, _c, C.Uint32(wrapLength))))
-	if surface == nil {
-		return nil, GetError()
-	}
-	return surface, nil
-}
 
 
 func (f *Font) SizeUTF8(text string) (int,int,error) {
@@ -175,7 +140,6 @@ func (f *Font) SizeUTF8(text string) (int,int,error) {
 }
 
 
->>>>>>> 5ce882196377c8e2867ecf5089b7b9e6567da5cc
 func (f *Font) Close() {
 	C.TTF_CloseFont(f.f)
 	f.f = nil
