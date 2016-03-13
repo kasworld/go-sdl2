@@ -10,7 +10,7 @@ import (
 
 func main() {
 	var window *sdl.Window
-	var info sdl.SysWMInfo
+	var info *sdl.SysWMInfo
 	var subsystem string
 	var err error
 
@@ -21,9 +21,8 @@ func main() {
 	}
 	defer window.Destroy()
 
-	sdl.VERSION(&info.Version)
-
-	if window.GetWMInfo(&info) {
+	info, err = window.GetWMInfo()
+	if err == nil {
 		switch info.Subsystem {
 		case sdl.SYSWM_UNKNOWN:
 			subsystem = "An unknown system!"
@@ -45,6 +44,6 @@ func main() {
 			info.Version.Patch,
 			subsystem)
 	} else {
-		fmt.Fprintf(os.Stderr, "Couldn't get window information: %s\n", sdl.GetError())
+		fmt.Fprintf(os.Stderr, "Couldn't get window information: %s\n", err)
 	}
 }

@@ -27,6 +27,8 @@ On __Arch Linux__, type:
 On __Mac OS X__, install SDL2 via [Homebrew](http://brew.sh) like so:
 `brew install sdl2{,_image,_ttf,_mixer}`
 
+On __Windows__, install SDL2 via [Msys2](https://msys2.github.io) like so:
+`pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2{,_mixer,_image,_ttf}`
 
 Installation
 ============
@@ -75,16 +77,25 @@ func main() {
 
 
 
-For more complete examples, see inside the _examples_ folder.
+For more complete examples, see inside the _examples_ folder. Run any of the .go files with `go run`.
 
-Documentation
-=============
-For now, take a look at http://godoc.org/github.com/veandco/go-sdl2/sdl. A full-featured website will be created once we hit a stable point.
+FAQ
+===
+__Why does my program crash randomly?__  
+Putting `runtime.LockOSThread()` at the start of your main() usually solves the problem. We will reimplement parts of go-sdl2 in different way so this doesn't happen in the future.
 
-Notes
-=====
-A standalone Go SDL2 library _is_ being considered (read: figured out). That means users should be able to just go get go-sdl2 and compile it without the original C library. That could mean faster build times, more 'idiomatic' Go code, and hopefully more people interested in using and contributing to go-sdl2!
- 
+__Why can't SDL_mixer seem to play MP3 audio file?__  
+Your installed SDL_mixer probably doesn't support MP3 file. You will need to compile smpeg and SDL_mixer from source with the MP3 option enabled. You can find smpeg in the `external` directory of SDL_mixer. Refer to issue [#148](https://github.com/veandco/go-sdl2/issues/148) for instructions.
+
+__Does go-sdl2 support compiling on mobile platforms like Android and iOS?__  
+Not yet
+
+__Will there be Go port of SDL2?__  
+There's some work on it but no plan to open-source it yet simply because it's a mess right now :)
+
+__How do I contribute?__  
+Generally by forking the repository, and then sending pull requests. But unfortunately this is a go project, and the absolute import statements make forking a bit more complicated. [Here](http://blog.campoy.cat/2014/03/github-and-go-forking-pull-requests-and.html) are some instructions, how you can work with that. Generally pull requests are very welcome.
+
 Contributors
 ============
 * [Jacky Boen](https://github.com/jackyb)
@@ -106,6 +117,7 @@ Contributors
 * [Geoff Catlin](https://github.com/gcatlin)
 * [Jason Alan Palmer](https://github.com/jalan)
 * [Seuk Won Kang](https://github.com/kasworld)
+* [Brandon Mulcahy](https://github.com/jangler)
 
 _if anyone is missing, let me know!_
 

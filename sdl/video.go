@@ -1,6 +1,12 @@
 package sdl
 
-// #include "sdl_wrapper.h"
+//	#include "sdl_wrapper.h"
+//	static inline Sint32 ShowMessageBox(SDL_MessageBoxData data)
+//	{
+//		Sint32 buttonid;
+//		SDL_ShowMessageBox(&data, &buttonid);
+//		return buttonid;
+//	}
 import "C"
 import "unsafe"
 
@@ -18,6 +24,7 @@ const (
 	WINDOW_MOUSE_FOCUS        = C.SDL_WINDOW_MOUSE_FOCUS
 	WINDOW_FULLSCREEN_DESKTOP = C.SDL_WINDOW_FULLSCREEN_DESKTOP
 	WINDOW_FOREIGN            = C.SDL_WINDOW_FOREIGN
+	WINDOW_ALLOW_HIGHDPI      = C.SDL_WINDOW_ALLOW_HIGHDPI
 )
 
 const (
@@ -49,6 +56,11 @@ const (
 	MESSAGEBOX_ERROR       = C.SDL_MESSAGEBOX_ERROR
 	MESSAGEBOX_WARNING     = C.SDL_MESSAGEBOX_WARNING
 	MESSAGEBOX_INFORMATION = C.SDL_MESSAGEBOX_INFORMATION
+)
+
+const (
+	MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT = C.SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT
+	MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT = C.SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT
 )
 
 const (
@@ -106,6 +118,48 @@ type GLContext C.SDL_GLContext
 // GLattr (https://wiki.libsdl.org/SDL_GLattr)
 type GLattr C.SDL_GLattr
 
+// MessageBoxColor (https://wiki.libsdl.org/SDL_MessageBoxColor)
+type MessageBoxColor struct {
+	R uint8
+	G uint8
+	B uint8
+}
+type cMessageBoxColor C.SDL_MessageBoxColor
+
+// MessageBoxColorScheme (https://wiki.libsdl.org/SDL_MessageBoxColorScheme)
+type MessageBoxColorScheme struct {
+	Colors [5]MessageBoxColor
+}
+type cMessageBoxColorScheme C.SDL_MessageBoxColorScheme
+
+// MessageBoxButtonData (https://wiki.libsdl.org/SDL_MessageBoxButtonData)
+type MessageBoxButtonData struct {
+	Flags    uint32
+	ButtonId int32
+	Text     string
+}
+
+// MessageBoxData (https://wiki.libsdl.org/SDL_MessageBoxData)
+type MessageBoxData struct {
+	Flags       uint32
+	Window      *Window
+	Title       string
+	Message     string
+	NumButtons  int32
+	Buttons     []MessageBoxButtonData
+	ColorScheme *MessageBoxColorScheme
+}
+
+type cMessageBoxData struct {
+	Flags       uint32
+	Window      *C.SDL_Window
+	Title       *C.char
+	Message     *C.char
+	NumButtons  int32
+	Buttons     *C.SDL_MessageBoxButtonData
+	ColorScheme *C.SDL_MessageBoxColorScheme
+}
+
 func (w *Window) cptr() *C.SDL_Window {
 	return (*C.SDL_Window)(unsafe.Pointer(w))
 }
@@ -114,8 +168,33 @@ func (dm *DisplayMode) cptr() *C.SDL_DisplayMode {
 	return (*C.SDL_DisplayMode)(unsafe.Pointer(dm))
 }
 
+func (mc *MessageBoxColor) cptr() *C.SDL_MessageBoxColor {
+	return (*C.SDL_MessageBoxColor)(unsafe.Pointer(mc))
+}
+
+func (mcs *MessageBoxColorScheme) cptr() *C.SDL_MessageBoxColorScheme {
+	return (*C.SDL_MessageBoxColorScheme)(unsafe.Pointer(mcs))
+}
+
+func (mbd *MessageBoxButtonData) cptr() *C.SDL_MessageBoxButtonData {
+	return (*C.SDL_MessageBoxButtonData)(unsafe.Pointer(mbd))
+}
+
+func (cmbd *C.SDL_MessageBoxButtonData) cptr() *C.SDL_MessageBoxButtonData {
+	return (*C.SDL_MessageBoxButtonData)(unsafe.Pointer(cmbd))
+}
+
+func (md *MessageBoxData) cptr() *C.SDL_MessageBoxData {
+	return (*C.SDL_MessageBoxData)(unsafe.Pointer(md))
+}
+
 func (attr GLattr) c() C.SDL_GLattr {
 	return C.SDL_GLattr(attr)
+}
+
+// GetDisplayName (https://wiki.libsdl.org/SDL_GetDisplayName)
+func GetDisplayName(displayIndex int) string {
+	return C.GoString(C.SDL_GetDisplayName(C.int(displayIndex)))
 }
 
 // GetNumVideoDisplays (https://wiki.libsdl.org/SDL_GetNumVideoDisplays)
@@ -491,6 +570,50 @@ func ShowSimpleMessageBox(flags uint32, title, message string, window *Window) e
 	return nil
 }
 
+// ShowMessageBox (https://wiki.libsdl.org/SDL_ShowMessageBox)
+func ShowMessageBox(data *MessageBoxData) (err error, buttonid int32) {
+	_title := C.CString(data.Title)
+	defer C.free(unsafe.Pointer(_title))
+	_message := C.CString(data.Message)
+	defer C.free(unsafe.Pointer(_message))
+
+	var cbuttons []C.SDL_MessageBoxButtonData
+	var cbtntexts []*C.char
+	defer func(texts []*C.char) {
+		for _, t := range texts {
+			C.free(unsafe.Pointer(t))
+		}
+	}(cbtntexts)
+
+	for _, btn := range data.Buttons {
+		ctext := C.CString(btn.Text)
+		cbtn := C.SDL_MessageBoxButtonData{
+			flags:    C.Uint32(btn.Flags),
+			buttonid: C.int(btn.ButtonId),
+			text:     ctext,
+		}
+
+		cbuttons = append(cbuttons, cbtn)
+		cbtntexts = append(cbtntexts, ctext)
+	}
+
+	cdata := C.SDL_MessageBoxData{
+		flags:       C.Uint32(data.Flags),
+		window:      data.Window.cptr(),
+		title:       _title,
+		message:     _message,
+		numbuttons:  C.int(data.NumButtons),
+		buttons:     &cbuttons[0],
+		colorScheme: data.ColorScheme.cptr(),
+	}
+
+	if buttonid := int32(C.ShowMessageBox(cdata)); buttonid < 0 {
+		return GetError(), buttonid
+	} else {
+		return nil, buttonid
+	}
+}
+
 // IsScreenSaverEnabled (https://wiki.libsdl.org/SDL_IsScreenSaverEnabled)
 func IsScreenSaverEnabled() bool {
 	return C.SDL_IsScreenSaverEnabled() != 0
@@ -581,6 +704,13 @@ func GL_GetSwapInterval() (int, error) {
 		return i, GetError()
 	}
 	return i, nil
+}
+
+// GL_GetDrawableSize (https://wiki.libsdl.org/SDL_GL_GetDrawableSize)
+func GL_GetDrawableSize(window *Window) (w, h int) {
+	var _w, _h C.int
+	C.SDL_GL_GetDrawableSize(window.cptr(), &_w, &_h)
+	return int(_w), int(_h)
 }
 
 // GL_SwapWindow (https://wiki.libsdl.org/SDL_GL_SwapWindow)

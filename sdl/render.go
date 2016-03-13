@@ -164,7 +164,7 @@ func (renderer *Renderer) CreateTextureFromSurface(surface *Surface) (*Texture, 
 }
 
 // Texture (https://wiki.libsdl.org/SDL_QueryTexture)
-func (texture *Texture) Query() (uint32, int, int, int, error) {
+func (texture *Texture) Query() (uint32, int, int32, int32, error) {
 	var format C.Uint32
 	var access C.int
 	var width C.int
@@ -173,7 +173,7 @@ func (texture *Texture) Query() (uint32, int, int, int, error) {
 	if ret < 0 {
 		return 0, 0, 0, 0, GetError()
 	}
-	return uint32(format), int(access), int(width), int(height), nil
+	return uint32(format), int(access), int32(width), int32(height), nil
 }
 
 // Texture (https://wiki.libsdl.org/SDL_SetTextureColorMod)
@@ -238,9 +238,9 @@ func (texture *Texture) Update(rect *Rect, pixels unsafe.Pointer, pitch int) err
 }
 
 // Texture (https://wiki.libsdl.org/SDL_LockTexture)
-func (texture *Texture) Lock(rect *Rect, pixels unsafe.Pointer, pitch *int) error {
+func (texture *Texture) Lock(rect *Rect, pixels *unsafe.Pointer, pitch *int) error {
 	_pitch := (*C.int)(unsafe.Pointer(pitch))
-	_ret := C.SDL_LockTexture(texture.cptr(), rect.cptr(), &pixels, _pitch)
+	_ret := C.SDL_LockTexture(texture.cptr(), rect.cptr(), pixels, _pitch)
 	if _ret < 0 {
 		return GetError()
 	}
@@ -334,6 +334,19 @@ func (renderer *Renderer) SetDrawColor(r, g, b, a uint8) error {
 	_b := C.Uint8(b)
 	_a := C.Uint8(a)
 	_ret := C.SDL_SetRenderDrawColor(renderer.cptr(), _r, _g, _b, _a)
+	if _ret < 0 {
+		return GetError()
+	}
+	return nil
+}
+
+// Custom variant of SetDrawColor
+func (renderer *Renderer) SetDrawColorArray(bs ...uint8) error {
+	_bs := []C.Uint8{0, 0, 0, 255}
+	for i := 0; i < len(_bs) && i < len(bs); i++ {
+		_bs[i] = C.Uint8(bs[i])
+	}
+	_ret := C.SDL_SetRenderDrawColor(renderer.cptr(), _bs[0], _bs[1], _bs[2], _bs[3])
 	if _ret < 0 {
 		return GetError()
 	}
