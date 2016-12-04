@@ -5,6 +5,10 @@ package sdl
 // #include "sdl_wrapper.h"
 import "C"
 
+import (
+	"runtime"
+)
+
 const (
 	INIT_TIMER          = 0x00000001
 	INIT_AUDIO          = 0x00000010
@@ -22,6 +26,33 @@ const (
 	PRESSED  = 1
 )
 
+// Queue of functions that are thread-sensitive
+var CallQueue = make(chan func(), 1)
+
+// Run through functions in CallQueue. Intended to be called as a goroutine.
+func processCalls() {
+	runtime.LockOSThread()
+
+	for {
+		f := <-CallQueue
+		f()
+	}
+}
+
+func init() {
+	go processCalls()
+}
+
+// Helper to run functions on the main thread
+func Do(f func()) {
+	done := make(chan bool, 1)
+	CallQueue <- func() {
+		f()
+		done <- true
+	}
+	<-done
+}
+
 // Init (https://wiki.libsdl.org/SDL_Init)
 func Init(flags uint32) error {
 	if C.SDL_Init(C.Uint32(flags)) != 0 {
@@ -35,8 +66,8 @@ func Quit() {
 	C.SDL_Quit()
 
 	eventFilterCache = nil
-	for k, _ := range eventWatchesCache {
-		delete(eventWatchesCache, k)
+	for k := range eventWatches {
+		delete(eventWatches, k)
 	}
 }
 

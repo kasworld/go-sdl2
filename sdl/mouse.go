@@ -1,6 +1,22 @@
 package sdl
 
-// #include "sdl_wrapper.h"
+/*
+#include "sdl_wrapper.h"
+
+#if defined(__WIN32)
+#include <SDL2/SDL_syswm.h>
+#else
+#include <SDL_syswm.h>
+#endif
+
+#if !(SDL_VERSION_ATLEAST(2,0,4))
+#pragma message("SDL_CaptureMouse is not supported before SDL 2.0.4")
+static int SDL_CaptureMouse(SDL_bool enabled)
+{
+	return -1;
+}
+#endif
+*/
 import "C"
 import "unsafe"
 
@@ -114,6 +130,20 @@ func FreeCursor(cursor *Cursor) {
 // ShowCursor (https://wiki.libsdl.org/SDL_ShowCursor)
 func ShowCursor(toggle int) int {
 	return int(C.SDL_ShowCursor(C.int(toggle)))
+}
+
+// CaptureMouse (https://wiki.libsdl.org/SDL_CaptureMouse)
+func CaptureMouse(toggle bool) error {
+	var ierr C.int
+	if toggle {
+		ierr = C.SDL_CaptureMouse(C.SDL_TRUE)
+	} else {
+		ierr = C.SDL_CaptureMouse(C.SDL_FALSE)
+	}
+	if ierr != 0 {
+		return GetError()
+	}
+	return nil
 }
 
 func Button(flag uint32) uint32 {

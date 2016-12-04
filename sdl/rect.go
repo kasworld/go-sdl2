@@ -29,6 +29,16 @@ func (a *Rect) cptr() *C.SDL_Rect {
 	return (*C.SDL_Rect)(unsafe.Pointer(a))
 }
 
+// InRect checks if a point resides inside a rectangle
+// (https://wiki.libsdl.org/SDL_PointInRect)
+func (p *Point) InRect(r *Rect) bool {
+	if (p.X >= r.X) && (p.X < (r.X + r.W)) &&
+		(p.Y >= r.Y) && (p.Y < (r.Y + r.H)) {
+		return true
+	}
+	return false
+}
+
 // Empty checks whether a rectangle has no area.
 // (https://wiki.libsdl.org/SDL_RectEmpty)
 func (a *Rect) Empty() bool {
@@ -39,7 +49,7 @@ func (a *Rect) Empty() bool {
 // (https://wiki.libsdl.org/SDL_RectEquals)
 func (a *Rect) Equals(b *Rect) bool {
 	if (a != nil) && (b != nil) &&
-		(a.X == b.X) && (a.Y == a.Y) &&
+		(a.X == b.X) && (a.Y == b.Y) &&
 		(a.W == b.W) && (a.H == b.H) {
 		return true
 	}

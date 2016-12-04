@@ -7,6 +7,41 @@ import (
 	"testing"
 )
 
+type EdgeCaseFunc func(t *testing.T, a, b interface{})
+
+func structMatch(t *testing.T, ta, tb reflect.Type) {
+	structMatchGeneric(t, ta, tb, ta.Size(), tb.Size())
+}
+
+func structMatchFixed(t *testing.T, ta, tb reflect.Type, szb uintptr) {
+	structMatchGeneric(t, ta, tb, ta.Size(), szb)
+}
+
+func structMatchGeneric(t *testing.T, ta, tb reflect.Type, sza, szb uintptr) {
+	if sza != szb {
+		t.Errorf("type size mismatch: %s(%d) != %s(%d)",
+			ta.Name(), ta.Size(), tb.Name(), tb.Size())
+		t.Fail()
+	}
+
+	if ta.Kind() != tb.Kind() {
+		t.Errorf("type kind mismatch: %s=%s != %s=%s",
+			ta.Name(), ta.Kind(), tb.Name(), tb.Kind())
+		t.Fail()
+	}
+}
+
+func mouseWheelEventEdgeCase(t *testing.T, a, b interface{}) {
+	ta, tb := reflect.TypeOf(a), reflect.TypeOf(b)
+
+	if VERSION_ATLEAST(2, 0, 4) {
+		structMatchFixed(t, ta, tb, 28)
+	} else {
+		tf := reflect.TypeOf(MouseWheelEvent{}.Direction)
+		structMatchFixed(t, ta, tb, tb.Size() + tf.Size())
+	}
+}
+
 // TODO: SysWMInfo
 // TODO: RendererInfo
 // TODO: AudioCVT
@@ -14,40 +49,41 @@ func TestStructABI(t *testing.T) {
 	var tests = []struct {
 		gStruct interface{}
 		cStruct interface{}
+		isEdgeCase EdgeCaseFunc
 	}{
-		{AudioSpec{}, cAudioSpec{}},
-		{DisplayMode{}, cDisplayMode{}},
-		{Palette{}, cPalette{}},
-		{PixelFormat{}, cPixelFormat{}},
-		{Surface{}, cSurface{}},
-		{Version{}, cVersion{}},
-		{WindowEvent{}, cWindowEvent{}},
+		{AudioSpec{}, cAudioSpec{}, nil},
+		{DisplayMode{}, cDisplayMode{}, nil},
+		{Palette{}, cPalette{}, nil},
+		{PixelFormat{}, cPixelFormat{}, nil},
+		{Surface{}, cSurface{}, nil},
+		{Version{}, cVersion{}, nil},
+		{WindowEvent{}, cWindowEvent{}, nil},
 
 		// EVENTS
-		{KeyDownEvent{}, cKeyboardEvent{}},
-		{KeyUpEvent{}, cKeyboardEvent{}},
-		{MouseButtonEvent{}, cMouseButtonEvent{}},
-		{MouseMotionEvent{}, cMouseMotionEvent{}},
-		{MouseWheelEvent{}, cMouseWheelEvent{}},
-		{TextEditingEvent{}, cTextEditingEvent{}},
-		{TextInputEvent{}, cTextInputEvent{}},
-		{JoyAxisEvent{}, cJoyAxisEvent{}},
-		{JoyBallEvent{}, cJoyBallEvent{}},
-		{JoyHatEvent{}, cJoyHatEvent{}},
-		{JoyButtonEvent{}, cJoyButtonEvent{}},
-		{ControllerAxisEvent{}, cControllerAxisEvent{}},
-		{ControllerButtonEvent{}, cControllerButtonEvent{}},
-		{ControllerDeviceEvent{}, cControllerDeviceEvent{}},
-		{TouchFingerEvent{}, cTouchFingerEvent{}},
-		{MultiGestureEvent{}, cMultiGestureEvent{}},
-		{DollarGestureEvent{}, cDollarGestureEvent{}},
-		{DropEvent{}, cDropEvent{}},
-		{UserEvent{}, cUserEvent{}},
-		{SysWMEvent{}, cSysWMEvent{}},
+		{KeyDownEvent{}, cKeyboardEvent{}, nil},
+		{KeyUpEvent{}, cKeyboardEvent{}, nil},
+		{MouseButtonEvent{}, cMouseButtonEvent{}, nil},
+		{MouseMotionEvent{}, cMouseMotionEvent{}, nil},
+		{MouseWheelEvent{}, cMouseWheelEvent{}, mouseWheelEventEdgeCase},
+		{TextEditingEvent{}, cTextEditingEvent{}, nil},
+		{TextInputEvent{}, cTextInputEvent{}, nil},
+		{JoyAxisEvent{}, cJoyAxisEvent{}, nil},
+		{JoyBallEvent{}, cJoyBallEvent{}, nil},
+		{JoyHatEvent{}, cJoyHatEvent{}, nil},
+		{JoyButtonEvent{}, cJoyButtonEvent{}, nil},
+		{ControllerAxisEvent{}, cControllerAxisEvent{}, nil},
+		{ControllerButtonEvent{}, cControllerButtonEvent{}, nil},
+		{ControllerDeviceEvent{}, cControllerDeviceEvent{}, nil},
+		{TouchFingerEvent{}, cTouchFingerEvent{}, nil},
+		{MultiGestureEvent{}, cMultiGestureEvent{}, nil},
+		{DollarGestureEvent{}, cDollarGestureEvent{}, nil},
+		{DropEvent{}, cDropEvent{}, nil},
+		{UserEvent{}, cUserEvent{}, nil},
+		{SysWMEvent{}, cSysWMEvent{}, nil},
 	}
 
 	for _, test := range tests {
-		testABI(t, test.gStruct, test.cStruct)
+		testABI(t, test.gStruct, test.cStruct, test.isEdgeCase)
 	}
 }
 
@@ -64,32 +100,30 @@ func TestTypeABI(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		testABI(t, test.gType, test.cType)
+		testABI(t, test.gType, test.cType, nil)
 	}
 }
 
-func testABI(t *testing.T, a, b interface{}) {
+func testABI(t *testing.T, a, b interface{}, f EdgeCaseFunc) {
 	ta, tb := reflect.TypeOf(a), reflect.TypeOf(b)
-	if ta.Size() != tb.Size() {
-		t.Fatalf("type size missmatch: %s(%d) != %s(%d)",
-			ta.Name(), ta.Size(), tb.Name(), tb.Size())
-	}
-	if ta.Kind() != tb.Kind() {
-		t.Fatalf("type kind missmatch: %s=%s != %s=%s",
-			ta.Name(), ta.Kind(), tb.Name(), tb.Kind())
-	}
 
-	if ta.Kind() == reflect.Struct {
-		for i := 0; i < ta.NumField(); i++ {
-			f := ta.Field(i)
-			if f.Name == "_" {
-				// ignore padding fields
-				continue
-			}
-			if err := verifyField(t, f, tb); err != nil {
-				dumpStructFormat(t, ta)
-				dumpStructFormat(t, tb)
-				t.Error(err)
+	if f != nil {
+		f(t, a, b)
+	} else {
+		structMatch(t, ta, tb)
+
+		if ta.Kind() == reflect.Struct {
+			for i := 0; i < ta.NumField(); i++ {
+				f := ta.Field(i)
+				if f.Name == "_" {
+					// ignore padding fields
+					continue
+				}
+				if err := verifyField(t, f, tb); err != nil {
+					dumpStructFormat(t, ta)
+					dumpStructFormat(t, tb)
+					t.Error(err)
+				}
 			}
 		}
 	}
@@ -114,7 +148,7 @@ func verifyField(t *testing.T, gField reflect.StructField, cType reflect.Type) e
 	gOffset, gSize := gField.Offset, gField.Type.Size()
 	cOffset, cSize := cField.Offset, cField.Type.Size()
 	if cOffset != gOffset || cSize != gSize {
-		return fmt.Errorf("field offset/size missmatch %s(%d, %d) != %s(%d, %d)",
+		return fmt.Errorf("field offset/size mismatch %s(%d, %d) != %s(%d, %d)",
 			gField.Name, gOffset, gSize,
 			cField.Name, cOffset, cSize)
 	}
