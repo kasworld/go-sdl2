@@ -1,6 +1,31 @@
 package sdl
 
-// #include "sdl_wrapper.h"
+/*
+#include "sdl_wrapper.h"
+
+#if !(SDL_VERSION_ATLEAST(2,0,4))
+#pragma message("SDL_QueueAudio is not supported before SDL 2.0.4")
+static int SDL_QueueAudio(SDL_AudioDeviceID dev, const void *data, Uint32 len)
+{
+	return -1;
+}
+static Uint32 SDL_GetQueuedAudioSize(SDL_AudioDeviceID dev_id)
+{
+	return 0;
+}
+static void SDL_ClearQueuedAudio(SDL_AudioDeviceID dev)
+{
+}
+#endif
+
+#if !(SDL_VERSION_ATLEAST(2,0,5))
+#pragma message("SDL_DequeueAudio is not supported before SDL 2.0.5")
+static int SDL_DequeueAudio(SDL_AudioDeviceID dev, const void *data, Uint32 len)
+{
+	return -1;
+}
+#endif
+*/
 import "C"
 import (
 	"reflect"
@@ -80,7 +105,7 @@ type AudioCVT struct {
 	SrcFormat   AudioFormat
 	DstFormat   AudioFormat
 	RateIncr    float64
-	buf         *uint8 // use AudioCVT.Buf() for access
+	Buf         unsafe.Pointer // use AudioCVT.BufAsSlice() for access via Go slice
 	Len         int32
 	LenCVT      int32
 	LenMult     int32
@@ -134,14 +159,22 @@ func (format AudioFormat) IsUnsigned() bool {
 	return !format.IsSigned()
 }
 
-// access AudioCVT.buf as slice.
-// len(slice) will return converted audio buffer length
-func (cvt AudioCVT) Buf() []byte {
+func (cvt *AudioCVT) AllocBuf(size uintptr) {
+	cvt.Buf = C.malloc(C.size_t(size))
+}
+
+func (cvt *AudioCVT) FreeBuf() {
+	C.free(cvt.Buf)
+}
+
+// Access AudioCVT.buf as slice.
+// NOTE: Must have used ConvertAudio() before usage because it uses LenCVT as slice length.
+func (cvt AudioCVT) BufAsSlice() []byte {
 	var b []byte
 	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	sliceHeader.Len = int(cvt.LenCVT)
 	sliceHeader.Cap = int(cvt.Len * cvt.LenMult)
-	sliceHeader.Data = uintptr(unsafe.Pointer(cvt.buf))
+	sliceHeader.Data = uintptr(unsafe.Pointer(cvt.Buf))
 	return b
 }
 
@@ -284,6 +317,38 @@ func ConvertAudio(cvt *AudioCVT) error {
 		return GetError()
 	}
 	return nil
+}
+
+// QueueAudio (https://wiki.libsdl.org/SDL_QueueAudio)
+func QueueAudio(dev AudioDeviceID, data []byte) error {
+	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	_data := unsafe.Pointer(sliceHeader.Data)
+	_len := (C.Uint32)(sliceHeader.Len)
+	if C.SDL_QueueAudio(dev.c(), _data, _len) != 0 {
+		return GetError()
+	}
+	return nil
+}
+
+// DequeueAudio (https://wiki.libsdl.org/SDL_DequeueAudio)
+func DequeueAudio(dev AudioDeviceID, data []byte) error {
+	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	_data := unsafe.Pointer(sliceHeader.Data)
+	_len := (C.Uint32)(sliceHeader.Len)
+	if C.SDL_DequeueAudio(dev.c(), _data, _len) != 0 {
+		return GetError()
+	}
+	return nil
+}
+
+// GetQueuedAudioSize (https://wiki.libsdl.org/SDL_GetQueuedAudioSize)
+func GetQueuedAudioSize(dev AudioDeviceID) uint32 {
+	return uint32(C.SDL_GetQueuedAudioSize(dev.c()))
+}
+
+// ClearQueuedAudio (https://wiki.libsdl.org/SDL_ClearQueuedAudio)
+func ClearQueuedAudio(dev AudioDeviceID) {
+	C.SDL_ClearQueuedAudio(dev.c())
 }
 
 // MixAudio (https://wiki.libsdl.org/SDL_MixAudio)

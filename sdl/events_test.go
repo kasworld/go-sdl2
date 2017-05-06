@@ -15,7 +15,7 @@ func TestEventsPushEvent(t *testing.T) {
 
 	// Remove existing events in the queue
 	if _, err := PeepEvents(make([]Event, 100), GETEVENT, FIRSTEVENT, LASTEVENT); err != nil {
-		t.Errorf("PeepEvents:", err)
+		t.Error("PeepEvents:", err)
 	}
 
 	PushEvent(&in)
@@ -97,8 +97,8 @@ func TestEventsSetEventFilter(t *testing.T) {
 	}, nil)
 
 	ins := []*UserEvent{
-		&UserEvent{Type: USEREVENT, Code: 42},
-		&UserEvent{Type: USEREVENT, Code: 41},
+		{Type: USEREVENT, Code: 42},
+		{Type: USEREVENT, Code: 41},
 	}
 
 	expectedOutCount := 0
@@ -140,8 +140,8 @@ func TestEventsFilterEventsFuncQ(t *testing.T) {
 	defer Quit()
 
 	ins := []*UserEvent{
-		&UserEvent{Type: USEREVENT, Code: 42},
-		&UserEvent{Type: USEREVENT, Code: 41},
+		{Type: USEREVENT, Code: 42},
+		{Type: USEREVENT, Code: 41},
 	}
 
 	filterFunc := func(e Event, log bool) bool {

@@ -27,10 +27,25 @@ On __Arch Linux__, type:
 On __Mac OS X__, install SDL2 via [Homebrew](http://brew.sh) like so:
 `brew install sdl2{,_image,_ttf,_mixer}`
 
-On __Windows__, you can either install SDL2 via [Msys2](https://msys2.github.io) like so:
-`pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2{,_mixer,_image,_ttf}`
+On __Windows__,  
+1. Install mingw-w64 from [Mingw-builds](http://mingw-w64.org/doku.php/download/mingw-builds)  
+        - Version: latest (at time of writing 6.3.0)  
+        - Architecture: x86_64  
+        - Threads: win32  
+        - Exception: seh  
+        - Build revision: 1  
+        - Destination Folder: Select a folder that your Windows user owns  
+2. Install SDL2 http://libsdl.org/download-2.0.php  
+        - Extract the SDL2 folder from the archive using a tool like [7zip](http://7-zip.org)  
+        - Inside the folder, copy the `i686-w64-mingw32` and/or `x86_64-w64-mingw32` depending on the architecture you chose into your mingw-w64 folder e.g. `C:\Program Files\mingw-w64\x86_64-6.3.0-win32-seh-rt_v5-rev1\mingw64`  
+3. Setup Path environment variable  
+        - Put your mingw-w64 binaries location into your system Path environment variable. e.g. `C:\Program Files\mingw-w64\x86_64-6.3.0-win32-seh-rt_v5-rev1\mingw64\bin` and `C:\Program Files\mingw-w64\x86_64-6.3.0-win32-seh-rt_v5-rev1\mingw64\x86_64-w64-mingw32\bin`  
+4. Open up a terminal such as `Git Bash` and run `go get -v github.com/veandco/go-sdl2/sdl`. To prove that it's working correctly, you can change directory by running `cd go/src/github.com/veandco/go-sdl2/examples/events` and run `go run events.go`. A window should pop up and you can see event logs printed when moving your mouse over it or typing on your keyboard.  
+5. (Optional) You can repeat __Step 2__ for [SDL_image](https://www.libsdl.org/projects/SDL_image), [SDL_mixer](https://www.libsdl.org/projects/SDL_mixer), [SDL_ttf](https://www.libsdl.org/projects/SDL_ttf)  
+        - NOTE: pre-build the libraries for faster compilation by running `go install github.com/veandco/go-sdl2/sdl_{image,mixer,ttf}`  
 
-or use [MinGW](http://mingw.org) and download pre-compiled development libraries from http://libsdl.org/download-2.0.php. In this case, you need to put files inside `i686-w64-mingw32` or `x86_64-w64-mingw32` into MinGW's `mingw32` directory e.g. `C:\MinGW\mingw32`. Assuming you have setup MinGW correctly (install base system so it has `gcc` and friends, set PATH environment variables), you should be able to build go-sdl2. If you have 64-bit system, you can still build by modifying certain environment flags before building such as `CGO_ENABLED=1 GOARCH=386 go build`.
+or you can install SDL2 via [Msys2](https://msys2.github.io) like so:
+`pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2{,_mixer,_image,_ttf}`
 
 
 Installation
@@ -84,8 +99,11 @@ For more complete examples, see inside the _examples_ folder. Run any of the .go
 
 FAQ
 ===
-__Why does my program crash randomly?__  
-Putting `runtime.LockOSThread()` at the start of your main() usually solves the problem. We will reimplement parts of go-sdl2 in different way so this doesn't happen in the future.
+__Why does my program exits with code 3221225781 on Windows?__  
+You need to put the `SDL2.dll` in the same folder as your program.
+
+__Why does my program crash randomly or hang?__  
+Putting `runtime.LockOSThread()` at the start of your main() usually solves the problem (see [SDL2 FAQ](https://wiki.libsdl.org/FAQDevelopment) about multi-threading).
 
 UPDATE: Recent update added a call queue system where you can put thread-sensitive code and have it called synchronously on the same OS thread. See the `render_queue` or `render_goroutines` examples to see how it works.
 
@@ -110,52 +128,3 @@ Due to the way Go is going with C interopability, this might not be possible or 
 License
 =======
 Go-SDL2 is BSD 3-clause licensed.
-
-Contributors
-============
-Here's the list of contributors with their respective Github URLs.
-* [Jacky Boen](https://github.com/jackyb)
-* [HardWareGuy](https://github.com/HardWareGuy)
-* [akovaski](https://github.com/akovaski)
-* [Jeromy Johnson](https://github.com/whyrusleeping)
-* [Cai Lei](https://github.com/ccll)
-* [Arne Döring](https://github.com/krux02)
-* [Marcus von Appen](https://github.com/marcusva)
-* [Tom Murray](https://github.com/TomMurray)
-* [Ian Davis](https://github.com/iand)
-* [hschendel](https://github.com/hschendel)
-* [Ingo Oeser](https://github.com/nightlyone)
-* [nlordell](https://github.com/nlordell)
-* [Ben Davies](https://github.com/JalfResi)
-* [Bastien Dejean](https://github.com/baskerville)
-* [Pirmin Tapken](https://github.com/PirminTapken)
-* [Robert Lillack](https://github.com/roblillack)
-* [Marcell Jusztin](https://github.com/morcmarc)
-* [Stan Schwertly](https://github.com/Stantheman)
-* [Michael Vetter](https://github.com/jubalh)
-* [Tom Fogal](https://github.com/tfogal)
-* [Philipp Meinen](https://github.com/PhiCode)
-* [Thomas McGrew](https://github.com/mcgrew)
-* [Geoff Catlin](https://github.com/gcatlin)
-* [Schobers](https://github.com/Schobers)
-* [Jan Tuitman](https://github.com/jantuitman)
-* [Nick Powell](https://github.com/THUNDERGROOVE)
-* [Steven R. Wiley](https://github.com/srwiley)
-* [Franco Lazzarino](https://github.com/flazz)
-* [Jason Alan Palmer](https://github.com/jalan)
-* [Seuk Won Kang](https://github.com/kasworld)
-* [Brandon Mulcahy](https://github.com/jangler)
-* [Tim Anema](https://github.com/tanema)
-* [Tyler Compton](https://github.com/velovix)
-* [Nicolas Hess](https://github.com/n0dev)
-* [Stephen Noonan](https://github.com/tycho)
-* [Guilherme Freitas Nemeth](https://github.com/glhrmfrts)
-* [Charney Kaye](https://github.com/charneykaye)
-* [Lars Scheme](https://github.com/gonutz)
-* [Emil Laine](https://github.com/emlai)
-* [Andreas T. Jonsson](https://github.com/andreas-jonsson)
-* [Milan Nikolic](https://github.com/gen2brain)
-* [Mike Gerow](https://github.com/gerow)
-* [Lilis Iskandar](https://github.com/veeableful)
-
-_if anyone is missing, let me know!.. or you can add yourself in :)_
