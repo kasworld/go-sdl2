@@ -6,7 +6,7 @@ package gfx
 //#include <stdlib.h>
 //#include "sdl_gfx_wrapper.h"
 import "C"
-import "github.com/veandco/go-sdl2/sdl"
+import "github.com/kasworld/go-sdl2/sdl"
 import "unsafe"
 
 // FPS

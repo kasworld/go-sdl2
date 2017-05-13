@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/sdl_ttf"
+	"github.com/kasworld/go-sdl2/sdl"
+	"github.com/kasworld/go-sdl2/sdl_ttf"
 )
 
 var winTitle string = "Text"

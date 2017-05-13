@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/kasworld/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/sdl_mixer"
+	"github.com/kasworld/go-sdl2/sdl_mixer"
 )
 
 func main() {

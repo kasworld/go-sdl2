@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/sdl_gfx"
+	"github.com/kasworld/go-sdl2/sdl"
+	"github.com/kasworld/go-sdl2/sdl_gfx"
 )
 
 var winTitle string = "SDL2 GFX"
@@ -38,7 +38,7 @@ func run() int {
 	vy[2] = int16(winHeight * 2 / 3)
 	gfx.FilledPolygonColor(renderer, vx, vy, sdl.Color{0, 0, 255, 255})
 
-	gfx.CharacterColor(renderer, winWidth - 16, 16, 'X', sdl.Color{255, 0, 0, 255})
+	gfx.CharacterColor(renderer, winWidth-16, 16, 'X', sdl.Color{255, 0, 0, 255})
 	gfx.StringColor(renderer, 16, 16, "GFX Demo", sdl.Color{0, 255, 0, 255})
 
 	renderer.Present()

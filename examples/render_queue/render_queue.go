@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/veandco/go-sdl2/sdl"
+	"github.com/kasworld/go-sdl2/sdl"
 )
 
 const (
-	WindowTitle = "Go-SDL2 Render Queue"
-	WindowWidth = 800
+	WindowTitle  = "Go-SDL2 Render Queue"
+	WindowWidth  = 800
 	WindowHeight = 600
 )
 
